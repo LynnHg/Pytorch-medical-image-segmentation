@@ -11,15 +11,10 @@ from utils.loss import *
 from hausdorff import hausdorff_distance
 
 
-type = "baseline"  # lynn baseline
-model_type = "attunet"  # lynn baseline
+model_type = "unet"
 
-if type == "baseline":
-    if model_type == "siamese":
-        from networks.siamese_unet import Baseline
-    elif model_type == "mcie":
-        from networks.baseline import Baseline
-    elif model_type == "unet":
+if model_type == "baseline":
+    if model_type == "unet":
         from networks.unet import Baseline
     elif model_type == "fcn":
         from networks.fcn import Baseline
@@ -27,10 +22,8 @@ if type == "baseline":
         from networks.segnet import Baseline
     elif model_type == "attunet":
         from networks.attunet import Baseline
-else:
-    from networks.baseline import Baseline
 
-fold = 2  # 1 2 3 4 5
+fold = 1  # 1 2 3 4 5
 augdata = "C0"
 root_path = '../'
 val_path = os.path.join(root_path, 'media/Datasets/MSCMR2019', augdata, 'npy')
@@ -46,7 +39,7 @@ val_set = mscmr2019.MSCMR2019(val_path, 'val', fold,
 val_loader = DataLoader(val_set, batch_size=1, shuffle=False)
 
 palette = mscmr2019.palette
-palette_color = mscmr2019.palette_color
+custom_palette = mscmr2019.custom_palette
 num_classes = mscmr2019.num_classes
 
 net = Baseline(num_classes=num_classes).cuda()
@@ -55,8 +48,6 @@ net.eval()
 
 
 def auto_val(net):
-    # 效果展示图片数
-    dices = 0
     # 所有切片的各个类别指标总和
     class_dices = np.array([0] * (num_classes - 1), dtype=np.float)
     class_jaccards = np.array([0] * (num_classes - 1), dtype=np.float)
@@ -77,22 +68,16 @@ def auto_val(net):
 
     # 存放每个切片的指标数组
     val_dice_arr = []
-    val_lesion_dice_arr = []
     val_jaccard_arr = []
-    val_lesion_jaccard_arr = []
     val_hsdf_arr = []
-    val_lesion_hsdf_arr = []
     for slice, (input, mask, mask_copy, file_name) in tqdm(enumerate(val_loader, 1)):
-        # init_size = (init_size[0].item(), init_size[1].item())
         file_name = file_name[0].split('.')[0]
 
         X = input.cuda()
-        if type == "lynn":
-            pred, _ = net(X)
-        elif type == "baseline":
-            pred = net(X)
+        pred = net(X)
         pred = torch.sigmoid(pred)
         pred = pred.cpu().detach()
+
         # pred[pred < 0.5] = 0
         # pred[pred > 0.5] = 1
 
@@ -107,7 +92,7 @@ def auto_val(net):
         # pred
         save_pred = helpers.onehot_to_mask(np.array(pred.squeeze()).transpose([1, 2, 0]), palette)
         save_pred_png = helpers.array_to_img(save_pred)
-        save_pred_color = helpers.onehot_to_mask(np.array(pred.squeeze()).transpose([1, 2, 0]), palette_color)
+        save_pred_color = helpers.onehot_to_mask(np.array(pred.squeeze()).transpose([1, 2, 0]), custom_palette)
         save_pred_png_color = helpers.array_to_img(save_pred_color)
 
         # 保存预测结果

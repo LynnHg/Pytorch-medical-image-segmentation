@@ -12,9 +12,9 @@ from tqdm import tqdm
 500 = LV
 600 = RV 
 '''
-palette = [[0], [200], [500], [600]]
-palette_color = [[0, 0, 0], [255, 255, 255], [101, 12, 68], [68, 104, 118]]
-num_classes = 4
+palette = [[0], [200], [500], [600]]  # 原始mask中不同类别的标记的颜色值
+custom_palette = [[0, 0, 0], [255, 255, 255], [101, 12, 68], [68, 104, 118]]  # 将mask重新映射为自定义的颜色（彩色方便观察）
+num_classes = 4  # 分割的类别
 
 c0_lge_t2_mean_std = ((398.816, 395.903), (242.600, 158.449), (164.044, 182.646))
 
@@ -81,7 +81,6 @@ class MSCMR2019(data.Dataset):
             img_path, mask_path = self.imgs[index]
             file_name = mask_path.split('\\')[-1]
 
-            # 多模态原图像加载
             img = np.load(img_path)
             mask = np.load(mask_path)
             init_size = mask.shape
@@ -90,7 +89,7 @@ class MSCMR2019(data.Dataset):
             mask = Image.fromarray(mask)
 
             if self.joint_transform is not None:
-                img, mask= self.joint_transform(img, mask)
+                img, mask = self.joint_transform(img, mask)
 
             if self.center_crop is not None:
                 img, mask = self.center_crop(img, mask)
@@ -119,7 +118,6 @@ class MSCMR2019(data.Dataset):
         else:
             img_path = self.imgs[index]
             file_name = img_path[0].split('\\')[-1]
-            # 多模态原图像加载
             img = np.load(img_path)
             init_size = img.shape
             img = Image.fromarray(img)
@@ -172,7 +170,7 @@ if __name__ == '__main__':
         for input, mask, mask_copy, _ in train_loader:
             print(input.shape, mask.shape, mask_copy.shape)
             a = mask_copy.squeeze()
-            b = helpers.onehot_to_mask(np.array(mask.squeeze()).transpose([1, 2, 0]), palette_color)
+            b = helpers.onehot_to_mask(np.array(mask.squeeze()).transpose([1, 2, 0]), custom_palette)
             c = input.squeeze() * c0_lge_t2_mean_std[0][1] + c0_lge_t2_mean_std[0][0]
 
             cv2.imshow('mat1', np.uint8(np.array(b)))

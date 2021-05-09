@@ -4,14 +4,15 @@ import numpy as np
 import nibabel as nb
 from tqdm import tqdm
 from PIL import Image
+
 from utils.image_transforms import RandomScaleCrop
 from utils.misc import data_rotate
-
+from datasets import mscmr2019
 from utils import helpers
 
 
-palette = [[0], [200], [500], [600]]
-palette1 = [[0, 0, 0], [255, 255, 255], [101, 12, 68], [68, 104, 118]]
+palette = mscmr2019.palette
+custom_palette = mscmr2019.custom_palette
 
 
 def nii_to_npy(dataset_dir, save_path, modal_type='C0', to_png=True):
@@ -55,7 +56,7 @@ def nii_to_npy(dataset_dir, save_path, modal_type='C0', to_png=True):
                 # mask_png = helpers.array_to_img(np.expand_dims(mask, axis=2))
 
                 mask_png_color = helpers.mask_to_onehot(np.expand_dims(mask, axis=2), palette)
-                mask_png_color = helpers.onehot_to_mask(mask_png_color, palette1)
+                mask_png_color = helpers.onehot_to_mask(mask_png_color, custom_palette)
                 mask_png_color = helpers.array_to_img(mask_png_color)
 
                 file_name = im_namelist[n].split('.')[0] + '{}.png'.format(i)
